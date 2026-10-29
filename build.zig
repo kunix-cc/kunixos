@@ -1,18 +1,20 @@
 const std = @import("std");
 
 pub fn build(b: *std.Build) void {
-    const target = "riscv32-freestanding-none";
+    const target = b.resolveTargetQuery(.{
+        .cpu_arch = .riscv32,
+        .os_tag = .freestanding,
+        .abi = .none,
+        .cpu_model = .baseline,
+        .cpu_features_sub = std.Target.riscv.featureSet(&.{ .f, .d }),
+    });
 
-    const common = b.addSystemCommand(&.{
-        "zig", "build-obj",
-    });
-    common.addFileArg(b.path("common.zig"));
-    common.addArgs(&.{
-        "-target",            target,
-        "-mcpu=baseline-f-d", "-O",
-        "ReleaseSmall",
-    });
-    const common_obj = common.addPrefixedOutputFileArg("-femit-bin=", "common.o");
+    const common = b.addObject(.{ .name = "common", .root_module = b.createModule(.{
+        .root_source_file = b.path("common.zig"),
+        .target = target,
+        .optimize = .ReleaseSmall,
+    }) });
+    const common_obj = common.getEmittedBin();
 
     const cflags = [_][]const u8{
         "-std=c11",
@@ -21,7 +23,7 @@ pub fn build(b: *std.Build) void {
         "-Wall",
         "-Wextra",
         "-target",
-        target,
+        "riscv32-freestanding-none",
         "-mabi=ilp32",
         "-fno-stack-protector",
         "-nostdlib",
