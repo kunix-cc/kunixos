@@ -21,11 +21,7 @@ pub fn build(b: *std.Build) void {
         "-g3",
         "-Wall",
         "-Wextra",
-        "-target",
-        "riscv32-freestanding-none",
-        "-mabi=ilp32",
         "-fno-stack-protector",
-        "-nostdlib",
     };
 
     const shell = b.addExecutable(.{
@@ -60,20 +56,18 @@ pub fn build(b: *std.Build) void {
     binary.addFileArg(shell_elf);
     const shell_bin = binary.addOutputFileArg("shell.bin");
 
+    const files = b.addWriteFiles();
+    _ = files.addCopyFile(shell_bin, "shell.bin");
+
     const embed = b.addSystemCommand(&.{
-        "bash", "-c",
-        "set -eu; " ++
-            "tmp=$(mktemp -d); " ++
-            "trap 'rm -rf \"$tmp\"' EXIT; " ++
-            "cp \"$1\" \"$tmp/shell.bin\"; " ++
-            "(cd \"$tmp\" && " ++
-            "llvm-objcopy -I binary " ++
-            "-O elf32-littleriscv " ++
-            "shell.bin shell.bin.o); " ++
-            "cp \"$tmp/shell.bin.o\" \"$2\"",
-        "--",
+        "/usr/bin/llvm-objcopy",
+        "-I",
+        "binary",
+        "-O",
+        "elf32-littleriscv",
+        "shell.bin",
     });
-    embed.addFileArg(shell_bin);
+    embed.setCwd(files.getDirectory());
     const shell_obj = embed.addOutputFileArg("shell.bin.o");
 
     const kernel = b.addExecutable(.{
