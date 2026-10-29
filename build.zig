@@ -14,9 +14,8 @@ pub fn build(b: *std.Build) void {
         .target = target,
         .optimize = .ReleaseSmall,
     }) });
-    const common_obj = common.getEmittedBin();
 
-    const cflags = [_][]const u8{
+    const cflags = &.{
         "-std=c11",
         "-O2",
         "-g3",
@@ -29,16 +28,27 @@ pub fn build(b: *std.Build) void {
         "-nostdlib",
     };
 
-    const shell = b.addSystemCommand(&.{ "zig", "cc" });
-    shell.addArgs(&cflags);
-    shell.addArgs(&.{ "-Wl,-e,start", "-T" });
-    shell.addFileArg(b.path("user.ld"));
-    shell.addFileArg(b.path("src/shell.c"));
-    shell.addFileArg(b.path("src/user.c"));
-    shell.addFileArg(b.path("src/common.c"));
-    shell.addFileArg(common_obj);
-    shell.addArg("-o");
-    const shell_elf = shell.addOutputFileArg("shell.elf");
+    const shell = b.addExecutable(.{
+        .name = "shell",
+        .root_module = b.createModule(.{
+            .target = target,
+            .optimize = .ReleaseSmall,
+        }),
+    });
+
+    shell.entry = .{ .symbol_name = "start" };
+    shell.setLinkerScript(b.path("user.ld"));
+    shell.root_module.addCSourceFiles(.{
+        .files = &.{
+            "src/shell.c",
+            "src/user.c",
+            "src/common.c",
+        },
+        .flags = cflags,
+    });
+    shell.root_module.addObject(common);
+
+    const shell_elf = shell.getEmittedBin();
 
     const binary = b.addSystemCommand(&.{
         "/usr/bin/llvm-objcopy",
@@ -66,16 +76,27 @@ pub fn build(b: *std.Build) void {
     embed.addFileArg(shell_bin);
     const shell_obj = embed.addOutputFileArg("shell.bin.o");
 
-    const kernel = b.addSystemCommand(&.{ "zig", "cc" });
-    kernel.addArgs(&cflags);
-    kernel.addArgs(&.{ "-Wl,-e,boot", "-T" });
-    kernel.addFileArg(b.path("kernel.ld"));
-    kernel.addFileArg(b.path("src/kernel.c"));
-    kernel.addFileArg(b.path("src/common.c"));
-    kernel.addFileArg(common_obj);
-    kernel.addFileArg(shell_obj);
-    kernel.addArg("-o");
-    const kernel_elf = kernel.addOutputFileArg("kernel.elf");
+    const kernel = b.addExecutable(.{
+        .name = "kernel",
+        .root_module = b.createModule(.{
+            .target = target,
+            .optimize = .ReleaseSmall,
+        }),
+    });
+    kernel.entry = .{ .symbol_name = "boot" };
+    kernel.setLinkerScript(b.path("kernel.ld"));
+
+    kernel.root_module.addCSourceFiles(.{
+        .files = &.{
+            "src/kernel.c",
+            "src/common.c",
+        },
+        .flags = cflags,
+    });
+    kernel.root_module.addObject(common);
+    kernel.root_module.addObjectFile(shell_obj);
+
+    const kernel_elf = kernel.getEmittedBin();
 
     const install = b.addInstallFileWithDir(
         kernel_elf,
