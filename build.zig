@@ -10,7 +10,7 @@ pub fn build(b: *std.Build) void {
     });
 
     const common = b.addObject(.{ .name = "common", .root_module = b.createModule(.{
-        .root_source_file = b.path("common.zig"),
+        .root_source_file = b.path("src/common.zig"),
         .target = target,
         .optimize = .ReleaseSmall,
     }) });
@@ -33,9 +33,9 @@ pub fn build(b: *std.Build) void {
     shell.addArgs(&cflags);
     shell.addArgs(&.{ "-Wl,-e,start", "-T" });
     shell.addFileArg(b.path("user.ld"));
-    shell.addFileArg(b.path("shell.c"));
-    shell.addFileArg(b.path("user.c"));
-    shell.addFileArg(b.path("common.c"));
+    shell.addFileArg(b.path("src/shell.c"));
+    shell.addFileArg(b.path("src/user.c"));
+    shell.addFileArg(b.path("src/common.c"));
     shell.addFileArg(common_obj);
     shell.addArg("-o");
     const shell_elf = shell.addOutputFileArg("shell.elf");
@@ -70,8 +70,8 @@ pub fn build(b: *std.Build) void {
     kernel.addArgs(&cflags);
     kernel.addArgs(&.{ "-Wl,-e,boot", "-T" });
     kernel.addFileArg(b.path("kernel.ld"));
-    kernel.addFileArg(b.path("kernel.c"));
-    kernel.addFileArg(b.path("common.c"));
+    kernel.addFileArg(b.path("src/kernel.c"));
+    kernel.addFileArg(b.path("src/common.c"));
     kernel.addFileArg(common_obj);
     kernel.addFileArg(shell_obj);
     kernel.addArg("-o");
