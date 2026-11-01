@@ -9,6 +9,12 @@ pub fn build(b: *std.Build) void {
         .cpu_features_sub = std.Target.riscv.featureSet(&.{ .f, .d }),
     });
 
+    const user = b.addObject(.{ .name = "user", .root_module = b.createModule(.{
+        .root_source_file = b.path("src/user.zig"),
+        .target = target,
+        .optimize = .ReleaseSmall,
+    }) });
+
     const common = b.addObject(.{ .name = "common", .root_module = b.createModule(.{
         .root_source_file = b.path("src/common.zig"),
         .target = target,
@@ -43,6 +49,7 @@ pub fn build(b: *std.Build) void {
         .flags = cflags,
     });
     shell.root_module.addObject(common);
+    shell.root_module.addObject(user);
 
     const shell_elf = shell.getEmittedBin();
 
