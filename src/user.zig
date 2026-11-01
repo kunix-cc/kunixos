@@ -24,3 +24,11 @@ pub export fn exit() noreturn {
     _ = syscall(SYS_EXIT, 0, 0, 0);
     while (true) {}
 }
+
+pub export fn start() linksection(".text.start") callconv(.naked) noreturn {
+    asm volatile (
+        \\la sp, __stack_top
+        \\call main
+        \\call exit
+    );
+}

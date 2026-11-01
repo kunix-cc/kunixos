@@ -43,7 +43,6 @@ pub fn build(b: *std.Build) void {
     shell.root_module.addCSourceFiles(.{
         .files = &.{
             "src/shell.c",
-            "src/user.c",
         },
         .flags = cflags,
     });
