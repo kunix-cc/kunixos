@@ -9,30 +9,10 @@ pub fn build(b: *std.Build) void {
         .cpu_features_sub = std.Target.riscv.featureSet(&.{ .f, .d }),
     });
 
-    const user = b.addObject(.{ .name = "user", .root_module = b.createModule(.{
-        .root_source_file = b.path("src/user.zig"),
-        .target = target,
-        .optimize = .ReleaseSmall,
-    }) });
-
-    const common = b.addObject(.{ .name = "common", .root_module = b.createModule(.{
-        .root_source_file = b.path("src/common.zig"),
-        .target = target,
-        .optimize = .ReleaseSmall,
-    }) });
-
-    const cflags = &.{
-        "-std=c11",
-        "-O2",
-        "-g3",
-        "-Wall",
-        "-Wextra",
-        "-fno-stack-protector",
-    };
-
     const shell = b.addExecutable(.{
         .name = "shell",
         .root_module = b.createModule(.{
+            .root_source_file = b.path("src/shell.zig"),
             .target = target,
             .optimize = .ReleaseSmall,
         }),
@@ -40,14 +20,6 @@ pub fn build(b: *std.Build) void {
 
     shell.entry = .{ .symbol_name = "start" };
     shell.setLinkerScript(b.path("user.ld"));
-    shell.root_module.addCSourceFiles(.{
-        .files = &.{
-            "src/shell.c",
-        },
-        .flags = cflags,
-    });
-    shell.root_module.addObject(common);
-    shell.root_module.addObject(user);
 
     const shell_elf = shell.getEmittedBin();
 
@@ -75,6 +47,20 @@ pub fn build(b: *std.Build) void {
     embed.setCwd(files.getDirectory());
     const shell_obj = embed.addOutputFileArg("shell.bin.o");
 
+    const common = b.addObject(.{ .name = "common", .root_module = b.createModule(.{
+        .root_source_file = b.path("src/common.zig"),
+        .target = target,
+        .optimize = .ReleaseSmall,
+    }) });
+
+    const cflags = &.{
+        "-std=c11",
+        "-O2",
+        "-g3",
+        "-Wall",
+        "-Wextra",
+        "-fno-stack-protector",
+    };
     const kernel = b.addExecutable(.{
         .name = "kernel",
         .root_module = b.createModule(.{

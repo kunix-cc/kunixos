@@ -1,13 +1,13 @@
-pub extern fn putchar(ch: u8) void;
+extern fn putchar(ch: u8) void;
 
-pub export fn strcmp(s1: [*:0]const u8, s2: [*:0]const u8) c_int {
+pub export fn strcmp(s1: [*:0]const u8, s2: [*:0]const u8) isize {
     var i: usize = 0;
     while (s1[i] != 0 and s2[i] != 0) : (i += 1) {
         if (s1[i] != s2[i]) {
             break;
         }
     }
-    return @as(c_int, s1[i]) - @as(c_int, s2[i]);
+    return @as(isize, s1[i]) - @as(isize, s2[i]);
 }
 
 pub export fn strcpy(dst: [*]u8, src: [*:0]const u8) [*:0]u8 {
