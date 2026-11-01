@@ -1,3 +1,5 @@
+pub extern fn putchar(ch: u8) void;
+
 pub export fn strcmp(s1: [*:0]const u8, s2: [*:0]const u8) c_int {
     var i: usize = 0;
     while (s1[i] != 0 and s2[i] != 0) : (i += 1) {
@@ -34,4 +36,53 @@ pub export fn memcpy(dst: *anyopaque, src: *const anyopaque, n: usize) *anyopaqu
         d[i] = s[i];
     }
     return dst;
+}
+
+pub export fn printf(fmt: [*]const u8, ...) void {
+    var args = @cVaStart();
+    defer @cVaEnd(&args);
+
+    var i: usize = 0;
+    while (fmt[i] != 0) : (i += 1) {
+        if (fmt[i] == '%') {
+            i += 1;
+            switch (fmt[i]) {
+                0 => {
+                    putchar('%');
+                    return;
+                },
+                '%' => putchar('%'),
+                's' => {
+                    const s: [*]u8 = @cVaArg(&args, [*]u8);
+                    var j: usize = 0;
+                    while (s[j] != 0) : (j += 1) {
+                        putchar(s[j]);
+                    }
+                },
+                'd' => {
+                    const value: isize = @cVaArg(&args, isize);
+                    var magnitude: usize = @abs(value);
+                    if (value < 0) {
+                        putchar('-');
+                        magnitude -= magnitude;
+                    }
+
+                    var divisor: usize = 1;
+                    while (magnitude / divisor > 9) {
+                        divisor *= 10;
+                    }
+
+                    while (divisor > 0) {
+                        const c: usize = '0' + magnitude / divisor;
+                        putchar(@truncate(c));
+                        magnitude %= divisor;
+                        divisor /= 10;
+                    }
+                },
+                else => unreachable,
+            }
+        } else {
+            putchar(fmt[i]);
+        }
+    }
 }

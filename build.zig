@@ -44,7 +44,6 @@ pub fn build(b: *std.Build) void {
         .files = &.{
             "src/shell.c",
             "src/user.c",
-            "src/common.c",
         },
         .flags = cflags,
     });
@@ -90,7 +89,6 @@ pub fn build(b: *std.Build) void {
     kernel.root_module.addCSourceFiles(.{
         .files = &.{
             "src/kernel.c",
-            "src/common.c",
         },
         .flags = cflags,
     });
